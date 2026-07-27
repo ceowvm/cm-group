@@ -29,7 +29,7 @@ const BASIC_COURSE=[
   },
   {
     title:'Урок 4. Фундаментальный анализ',
-    url:'https://files.salebot.pro/uploads/file_item/51781924/file/657680/%D0%A4%D1%83%D0%BD%D0%B4%D0%B0%D0%BC%D0%B5%D0%BD%D1%82%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D0%B9_%D0%B0%D0%BD%D0%B0%D0%BB%D0%B8%D0%B7_%D0%91%D0%B0%D0%B7%D0%BE%D0%B2%D1%8B%D0%B9_%D0%BA%D1%83%D1%80%D1%81_%D1%87%D0%B0%D1%81%D1%82%D1%8C_%D1%87%D0%B5%D1%82%D0%B2%D0%B5%D1%80%D1%82%D0%B0%D1%8F__get-speed.com_.mp4'
+    url:'https://files.salebot.pro/uploads/file_item/51781924/file/657680/%D0%A4%D1%83%D0%BD%D0%B4%D0%B0%D0%BC%D0%B5%D0%BD%D1%82%D0%B0%D0%BB%D1%8B%D0%BD%D1%8B%D0%B9_%D0%B0%D0%BD%D0%B0%D0%BB%D0%B8%D0%B7_%D0%91%D0%B0%D0%B7%D0%BE%D0%B2%D1%8B%D0%B9_%D0%BA%D1%83%D1%80%D1%81_%D1%87%D0%B0%D1%81%D1%82%D1%8C_%D1%87%D0%B5%D1%82%D0%B2%D0%B5%D1%80%D1%82%D0%B0%D1%8F__get-speed.com_.mp4'
   },
   {
     title:'Урок 5. Технический анализ',
@@ -46,7 +46,7 @@ const questions=[
 ];
 
 const defaults={
-  screen:'welcome',step:0,answers:{},name:'',phone:'',consent:false,
+  screen:'welcome',step:0,answers:{},name:'',nameConfirmed:false,phone:'',consent:false,
   quizCompleted:false,phoneSubmitted:false,calculatorCompleted:false,
   recommendedProduct:null,profile:null,selectedProduct:'signals',
   pendingAction:null,pendingPayload:null,calc:{capital:5000,months:6}
@@ -127,7 +127,7 @@ function recommendation(){
 
 function result(){
   let p=state.profile||{title:'Ваш профиль готов',subtitle:'Рекомендация сформирована.'};
-  return `<section class="screen stack"><div class="card"><span class="profile-badge">Ваш результат</span><div class="mt-16"><h2>${p.title}</h2><p class="muted">${p.subtitle}</p></div><div class="card soft mt-16"><strong>Описание профиля</strong><p class="muted mt-12">Ваши ответы показывают, что сейчас для вас важнее всего перейти от отдельных решений к понятной системе: заранее определять правила входа, контролировать риск и оценивать результат по повторяемому процессу, а не по одной сделке.</p></div><div class="card soft"><strong>Главная точка роста</strong><p class="muted mt-12">Сформировать последовательный подход, который помогает снижать влияние эмоций, повторять правильные действия и контролировать риски.</p></div><button class="btn btn-primary mt-16" data-action="continue-name">${state.name?'Открыть подборку':'Сохранить мою подборку'}</button></div>${recommendation()}</section>`;
+  return `<section class="screen stack"><div class="card"><span class="profile-badge">Ваш результат</span><div class="mt-16"><h2>${p.title}</h2><p class="muted">${p.subtitle}</p></div><div class="card soft mt-16"><strong>Описание профиля</strong><p class="muted mt-12">Ваши ответы показывают, что сейчас для вас важнее всего перейти от отдельных решений к понятной системе: заранее определять правила входа, контролировать риск и оценивать результат по повторяемому процессу, а не по одной сделке.</p></div><div class="card soft"><strong>Главная точка роста</strong><p class="muted mt-12">Сформировать последовательный подход, который помогает снижать влияние эмоций, повторять правильные действия и контролировать риски.</p></div><button class="btn btn-primary mt-16" data-action="continue-name">${state.nameConfirmed?'Открыть подборку':'Сохранить мою подборку'}</button></div>${recommendation()}</section>`;
 }
 
 function nameScreen(){return `<section class="screen"><div class="card"><span class="profile-badge">Персонализация</span><h2 class="mt-16">Ваш результат готов</h2><p class="muted">Как к вам обращаться, чтобы сохранить персональную подборку?</p><div class="field"><label>Имя</label><input id="name" value="${esc(state.name)}" placeholder="Например, Александр"></div><button class="btn btn-primary mt-16" data-action="save-name">Сохранить результат</button></div></section>`}
@@ -220,11 +220,11 @@ function bind(){
       if(!state.answers[questions[state.step].key])return toast('Выберите вариант');
       if(state.step<4){state.step++;save();render()}else{diagnose();setScreen('analysis');setTimeout(runAnalysis,100)}
     }
-    if(a==='continue-name')setScreen(state.name?'gifts':'name');
+    if(a==='continue-name')setScreen(state.nameConfirmed?'gifts':'name');
     if(a==='save-name'){
       let v=document.getElementById('name').value.trim();
       if(v.length<2)return toast('Введите имя');
-      state.name=v;save();send('name_saved');setScreen('gifts');
+      state.name=v;state.nameConfirmed=true;save();send('name_saved');setScreen('gifts');
     }
     if(a==='submit-phone'){
       let p=document.getElementById('phone').value.trim(),c=document.getElementById('consent').checked;
