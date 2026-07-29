@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=3.0.1">
-  <link rel="stylesheet" href="production.css?v=3.0.1">
+  <link rel="stylesheet" href="styles.css?v=3.0.2">
+  <link rel="stylesheet" href="production.css?v=3.0.2">
   <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
 </head>
 <body>
@@ -25,7 +25,15 @@
       </button>
       <div class="topbar-actions">
         <span id="syncStatus" class="sync-status sync-status--connecting" aria-live="polite">Подключаем профиль…</span>
-        <button class="icon-btn hidden" id="menuButton" type="button" aria-label="Открыть личный кабинет">☰</button>
+        <button class="icon-btn hidden" id="menuButton" type="button" aria-label="Открыть меню" aria-expanded="false" aria-controls="popupMenu">☰</button>
+      </div>
+      <div id="popupMenu" class="popup-menu hidden" role="menu" aria-label="Меню приложения">
+        <button type="button" role="menuitem" data-menu-nav="dashboard"><span aria-hidden="true">⌂</span>Главная</button>
+        <button type="button" role="menuitem" data-menu-nav="result"><span aria-hidden="true">◎</span>Результат</button>
+        <button type="button" role="menuitem" data-menu-nav="calculator"><span aria-hidden="true">↗</span>Расчёт</button>
+        <button type="button" role="menuitem" data-menu-nav="materials"><span aria-hidden="true">◆</span>Материалы</button>
+        <div class="popup-menu__divider"></div>
+        <button class="popup-menu__consultation" type="button" role="menuitem" data-menu-action="consultation"><span aria-hidden="true">✦</span>Записаться на консультацию</button>
       </div>
     </header>
     <main id="app" class="app" aria-live="polite"></main>
@@ -38,10 +46,10 @@
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <noscript><div class="noscript">Для работы приложения необходимо включить JavaScript.</div></noscript>
-  <script src="app.js?v=3.0.1"></script>
-  <script src="js/views-basic.js?v=3.0.1"></script>
-  <script src="js/views-materials.js?v=3.0.1"></script>
-  <script src="js/views-products.js?v=3.0.1"></script>
-  <script src="js/main.js?v=3.0.1"></script>
+  <script src="app.js?v=3.0.2"></script>
+  <script src="js/views-basic.js?v=3.0.2"></script>
+  <script src="js/views-materials.js?v=3.0.2"></script>
+  <script src="js/views-products.js?v=3.0.2"></script>
+  <script src="js/main.js?v=3.0.2"></script>
 </body>
 </html>
