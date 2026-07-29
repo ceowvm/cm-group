@@ -7,10 +7,11 @@ return [
     'allowed_origin' => 'https://app.cmgroup.pro',
     'auth_max_age' => 86400,
 
-    // Профили и события сохраняются в защищённой папке на REG.RU.
-    'storage_path' => __DIR__ . '/storage',
+    // Постоянные данные пользователей. Эту папку нельзя удалять при обновлении приложения.
+    // Путь указывает на /data в корне сайта, отдельно от исполняемого кода /api.
+    'storage_path' => dirname(__DIR__) . '/data',
 
-    // Необязательно: HTTPS webhook SaleBot/CRM для автоматической передачи событий.
+    // HTTPS webhook SaleBot/CRM для передачи имени, телефона, квиза и заявок.
     'event_webhook_url' => '',
     'event_webhook_secret' => '',
 ];
