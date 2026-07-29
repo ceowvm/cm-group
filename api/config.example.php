@@ -7,15 +7,8 @@ return [
     'allowed_origin' => 'https://app.cmgroup.pro',
     'auth_max_age' => 86400,
 
-    // auto — PDO/SQLite при наличии расширения, иначе защищённые JSON-файлы.
-    // Для REG.RU можно оставить auto: отдельная база на первом этапе не обязательна.
-    'storage_driver' => 'auto',
+    // Профили и события сохраняются в защищённой папке на REG.RU.
     'storage_path' => __DIR__ . '/storage',
-    'database' => [
-        'dsn' => 'sqlite:' . __DIR__ . '/storage/cm_group.sqlite',
-        'user' => null,
-        'password' => null,
-    ],
 
     // Необязательно: HTTPS webhook SaleBot/CRM для автоматической передачи событий.
     'event_webhook_url' => '',
