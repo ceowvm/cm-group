@@ -17,14 +17,16 @@ jobs:
         with:
           php-version: '8.2'
       - name: Check JavaScript syntax
-        run: node --check app.js
+        run: find . -name '*.js' -not -path './.git/*' -print0 | xargs -0 -n1 node --check
       - name: Check PHP syntax
         run: find api -name '*.php' -print0 | xargs -0 -n1 php -l
       - name: Verify required files
         run: |
           test -f index.html
           test -f styles.css
+          test -f production.css
           test -f logo.png
+          test -f js/main.js
           test -f api/profile.php
           test -f api/event.php
           test -f api/health.php
