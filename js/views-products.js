@@ -30,8 +30,16 @@ async function performProtectedAction(action,payload={}){
     void emitEvent('lesson_opened',{lesson_url:payload.url||''});
     if(payload.isLink)openExternal(payload.url);else setScreen('materials');
   }else if(action==='product-consultation'){
-    await emitEvent('product_consultation_requested',{product:payload.product||state.recommendedProduct});
-    toast('Заявка сохранена. Специалист свяжется с вами.','success');
+    const delivered=await emitEvent('product_consultation_requested',{
+      product:payload.product||state.recommendedProduct||state.selectedProduct||'general',
+      source:payload.source||'application'
+    });
+    if(delivered){
+      haptic('notificationOccurred');
+      toast('Заявка отправлена. Менеджер свяжется с вами в ближайшее время.','success');
+    }else{
+      toast('Не удалось отправить заявку. Откройте приложение из Telegram и попробуйте ещё раз.','warning');
+    }
   }else if(action==='full-access'){
     await emitEvent('full_access_opened');
     setScreen('materials');
@@ -55,4 +63,3 @@ async function goToBot(startParam=''){
     location.href=url;
   }
 }
-
