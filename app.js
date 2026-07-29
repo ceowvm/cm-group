@@ -1,12 +1,30 @@
-const tg=window.Telegram?.WebApp;
+'use strict';
+
+const APP_VERSION='3.0.0';
+const API_BASE='./api';
+const BOT_URL='https://t.me/cmgroup_pro_bot';
+const POLICY_URL='https://cmgroup.pro/policy';
+const LOCAL_KEY='cm-state-v3';
+const LEGACY_LOCAL_KEY='cm-state';
+const ALLOWED_MONTHS=[3,4,5,6,9,12];
+const ALLOWED_SCREENS=new Set(['welcome','quiz','analysis','result','name','gifts','phone','dashboard','calculator','materials','course','products','productDetail']);
+const PROTECTED_ACTIONS=new Set(['get-book','open-course','open-lesson','product-consultation','full-access']);
+const DEBUG_MODE=new URLSearchParams(location.search).get('debug')==='1';
+
+const tg=window.Telegram?.WebApp||null;
 if(tg){
   tg.ready();
   tg.expand();
-  try{tg.setHeaderColor('#0f064a');tg.setBackgroundColor('#08051f')}catch(e){}
+  try{
+    tg.setHeaderColor('#0f064a');
+    tg.setBackgroundColor('#08051f');
+    if(tg.isVersionAtLeast?.('7.10'))tg.setBottomBarColor('#08051f');
+  }catch(error){console.warn('Telegram theme setup failed',error)}
 }
 
-const telegramUser=tg?.initDataUnsafe?.user||null;
-const TELEGRAM_FIRST_NAME=(telegramUser?.first_name||'').trim();
+const telegramInitData=tg?.initData||'';
+const telegramUser=tg?.initDataUnsafe?.user||null; // Только для предварительного отображения. Сервер проверяет initData.
+const TELEGRAM_FIRST_NAME=String(telegramUser?.first_name||'').trim();
 
 const BOOK_URL='https://files.salebot.pro/uploads/file_item/50746670/file/657680/%D0%94%D0%BD%D0%B5%D0%B2%D0%BD%D0%B8%D0%BA_%D1%83%D1%81%D0%BF%D0%B5%D1%88%D0%BD%D0%BE%D0%B3%D0%BE_%D1%82%D1%80%D0%B5%D0%B9%D0%B4%D0%B5%D1%80%D0%B0.pdf';
 const SIGNALS_VIDEO='https://files.salebot.pro/uploads/file_item/48111350/file/657680/CM_Signals_-_готовое_решение_для_экономии_вашего_времени_и_сил-original.mp4';
@@ -15,26 +33,11 @@ const LESSON_1='https://kinescope.io/fcTQwi5Rtrgk9GBkjL9K7v';
 const LESSON_2='https://files.salebot.pro/uploads/file_item/51782026/file/657680/%D0%A0%D0%B8%D1%81%D0%BA-%D0%BC%D0%B5%D0%BD%D0%B5%D0%B4%D0%B6%D0%BC%D0%B5%D0%BD%D1%82_%D0%9F%D1%80%D0%B0%D0%B2%D0%B8%D0%BB%D0%BE_%D1%82%D1%80%D0%B5%D1%85_%D0%91%D0%B0%D0%B7%D0%BE%D0%B2%D1%8B%D0%B9_%D0%BA%D1%83%D1%80%D1%81_%D0%A7%D0%B0%D1%81%D1%82%D1%8C_%D1%81%D0%B5%D0%BC%D1%8C__get-speed.com_.mp4';
 
 const BASIC_COURSE=[
-  {
-    title:'Урок 1. Финансовые рынки и рынок фиксированного дохода',
-    url:'https://files.salebot.pro/uploads/file_item/49908883/file/657680/%D0%A4%D0%B8%D0%BD%D0%B0%D0%BD%D1%81%D0%BE%D0%B2%D1%8B%D0%B5_%D1%80%D1%8B%D0%BD%D0%BA%D0%B8._%D0%A0%D1%8B%D0%BD%D0%BE%D0%BA_%D1%84%D0%B8%D0%BA%D1%81%D0%B8%D1%80%D0%BE%D0%B2%D0%B0%D0%BD%D0%BD%D0%BE%D0%B3%D0%BE_%D0%B4%D0%BE%D1%85%D0%BE%D0%B4%D0%B0._%D0%91%D0%B0%D0%B7%D0%BE%D0%B2%D1%8B%D0%B9_%D0%BA%D1%83%D1%80%D1%81_%D1%87%D0%B0%D1%81%D1%82%D1%8C_%D0%BF%D0%B5%D1%80%D0%B2%D0%B0%D1%8F.mp4'
-  },
-  {
-    title:'Урок 2. Товарно-сырьевой и фондовый рынок',
-    url:'https://files.salebot.pro/uploads/file_item/49908995/file/657680/%D0%A2%D0%BE%D0%B2%D0%B0%D1%80%D0%BD%D0%BE-%D1%81%D1%8B%D1%80%D1%8C%D0%B5%D0%B2%D0%BE%D0%B9_%D0%B8_%D1%84%D0%BE%D0%BD%D0%B4%D0%BE%D0%B2%D1%8B%D0%B9_%D1%80%D1%8B%D0%BD%D0%BE%D0%BA._%D0%91%D0%B0%D0%B7%D0%BE%D0%B2%D1%8B%D0%B9_%D0%BA%D1%83%D1%80%D1%81_%D0%B4%D0%BB%D1%8F_%D1%82%D0%BE%D1%80%D0%B3%D1%83%D1%8E%D1%89%D0%B8%D1%85_%D1%82%D1%80%D0%B5%D0%B9%D0%B4%D0%B5%D1%80%D0%BE%D0%B2___%D1%87%D0%B0%D1%81%D1%82%D1%8C_2.mp4'
-  },
-  {
-    title:'Урок 3. Валютный рынок',
-    url:'https://files.salebot.pro/uploads/file_item/51781400/file/657680/%D0%92%D0%B0%D0%BB%D1%8E%D1%82%D0%BD%D1%8B%D0%B9_%D1%80%D1%8B%D0%BD%D0%BE%D0%BA_%D0%91%D0%B0%D0%B7%D0%BE%D0%B2%D1%8B%D0%B9_%D0%BA%D1%83%D1%80%D1%81_%D1%87%D0%B0%D1%81%D1%82%D1%8C_%D1%82%D1%80%D0%B5%D1%82%D1%8C%D1%8F__get-speed.com_.mp4'
-  },
-  {
-    title:'Урок 4. Фундаментальный анализ',
-    url:'https://files.salebot.pro/uploads/file_item/51781924/file/657680/%D0%A4%D1%83%D0%BD%D0%B4%D0%B0%D0%BC%D0%B5%D0%BD%D1%82%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D0%B9_%D0%B0%D0%BD%D0%B0%D0%BB%D0%B8%D0%B7_%D0%91%D0%B0%D0%B7%D0%BE%D0%B2%D1%8B%D0%B9_%D0%BA%D1%83%D1%80%D1%81_%D1%87%D0%B0%D1%81%D1%82%D1%8C_%D1%87%D0%B5%D1%82%D0%B2%D0%B5%D1%80%D1%82%D0%B0%D1%8F__get-speed.com_.mp4'
-  },
-  {
-    title:'Урок 5. Технический анализ',
-    url:'https://files.salebot.pro/uploads/file_item/51781984/file/657680/%D0%A2%D0%B5%D1%85%D0%BD%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B8%D0%B9_%D0%B0%D0%BD%D0%B0%D0%BB%D0%B8%D0%B7_%D0%91%D0%B0%D0%B7%D0%BE%D0%B2%D1%8B%D0%B9_%D0%BA%D1%83%D1%80%D1%81_%D1%87%D0%B0%D1%81%D1%82%D1%8C_%D0%BF%D1%8F%D1%82%D0%B0%D1%8F__get-speed.com_.mp4'
-  }
+  {title:'Урок 1. Финансовые рынки и рынок фиксированного дохода',url:'https://files.salebot.pro/uploads/file_item/49908883/file/657680/%D0%A4%D0%B8%D0%BD%D0%B0%D0%BD%D1%81%D0%BE%D0%B2%D1%8B%D0%B5_%D1%80%D1%8B%D0%BD%D0%BA%D0%B8._%D0%A0%D1%8B%D0%BD%D0%BE%D0%BA_%D1%84%D0%B8%D0%BA%D1%81%D0%B8%D1%80%D0%BE%D0%B2%D0%B0%D0%BD%D0%BD%D0%BE%D0%B3%D0%BE_%D0%B4%D0%BE%D1%85%D0%BE%D0%B4%D0%B0._%D0%91%D0%B0%D0%B7%D0%BE%D0%B2%D1%8B%D0%B9_%D0%BA%D1%83%D1%80%D1%81_%D1%87%D0%B0%D1%81%D1%82%D1%8C_%D0%BF%D0%B5%D1%80%D0%B2%D0%B0%D1%8F.mp4'},
+  {title:'Урок 2. Товарно-сырьевой и фондовый рынок',url:'https://files.salebot.pro/uploads/file_item/49908995/file/657680/%D0%A2%D0%BE%D0%B2%D0%B0%D1%80%D0%BD%D0%BE-%D1%81%D1%8B%D1%80%D1%8C%D0%B5%D0%B2%D0%BE%D0%B9_%D0%B8_%D1%84%D0%BE%D0%BD%D0%B4%D0%BE%D0%B2%D1%8B%D0%B9_%D0%BA%D1%83%D1%80%D1%81_%D0%B4%D0%BB%D1%8F_%D1%82%D0%BE%D1%80%D0%B3%D1%83%D1%8E%D1%89%D0%B8%D1%85_%D1%82%D1%80%D0%B5%D0%B9%D0%B4%D0%B5%D1%80%D0%BE%D0%B2___%D1%87%D0%B0%D1%81%D1%82%D1%8C_2.mp4'},
+  {title:'Урок 3. Валютный рынок',url:'https://files.salebot.pro/uploads/file_item/51781400/file/657680/%D0%92%D0%B0%D0%BB%D1%8E%D1%82%D0%BD%D1%8B%D0%B9_%D1%80%D1%8B%D0%BD%D0%BE%D0%BA_%D0%91%D0%B0%D0%B7%D0%BE%D0%B2%D1%8B%D0%B9_%D0%BA%D1%83%D1%80%D1%81_%D1%87%D0%B0%D1%81%D1%82%D1%8C_%D1%82%D1%80%D0%B5%D1%82%D1%8C%D1%8F__get-speed.com_.mp4'},
+  {title:'Урок 4. Фундаментальный анализ',url:'https://files.salebot.pro/uploads/file_item/51781924/file/657680/%D0%A4%D1%83%D0%BD%D0%B4%D0%B0%D0%BC%D0%B5%D0%BD%D1%82%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D0%B9_%D0%B0%D0%BD%D0%B0%D0%BB%D0%B8%D0%B7_%D0%91%D0%B0%D0%B7%D0%BE%D0%B2%D1%8B%D0%B9_%D0%BA%D1%83%D1%80%D1%81_%D1%87%D0%B0%D1%81%D1%82%D1%8C_%D1%87%D0%B5%D1%82%D0%B2%D0%B5%D1%80%D1%82%D0%B0%D1%8F__get-speed.com_.mp4'},
+  {title:'Урок 5. Технический анализ',url:'https://files.salebot.pro/uploads/file_item/51781984/file/657680/%D0%A2%D0%B5%D1%85%D0%BD%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B8%D0%B9_%D0%B0%D0%BD%D0%B0%D0%BB%D0%B8%D0%B7_%D0%91%D0%B0%D0%B7%D0%BE%D0%B2%D1%8B%D0%B9_%D0%BA%D1%83%D1%80%D1%81_%D1%87%D0%B0%D1%81%D1%82%D1%8C_%D0%BF%D1%8F%D1%82%D0%B0%D1%8F__get-speed.com_.mp4'}
 ];
 
 const questions=[
@@ -45,221 +48,218 @@ const questions=[
   {key:'goal',title:'Какой результат для вас главный?',options:[['extra_income','Получать дополнительный доход'],['main_income','Создать основной источник дохода'],['capital_growth','Сохранить и приумножить капитал'],['less_emotions','Снизить влияние эмоций и ошибок'],['automate','Автоматизировать торговый процесс'],['inflation','Защитить деньги от инфляции']]}
 ];
 
+const allowedAnswers=Object.fromEntries(questions.map(question=>[question.key,new Set(question.options.map(([value])=>value))]));
 const defaults={
-  screen:'welcome',step:0,answers:{},name:'',nameConfirmed:false,phone:'',consent:false,
-  quizCompleted:false,phoneSubmitted:false,calculatorCompleted:false,
-  recommendedProduct:null,profile:null,selectedProduct:'signals',
-  pendingAction:null,pendingPayload:null,calc:{capital:5000,months:6}
+  version:APP_VERSION,updatedAt:null,screen:'welcome',step:0,answers:{},name:'',nameConfirmed:false,phone:'',consent:false,
+  quizCompleted:false,phoneSubmitted:false,calculatorCompleted:false,recommendedProduct:null,profile:null,
+  selectedProduct:'signals',pendingAction:null,pendingPayload:null,calc:{capital:5000,months:6}
 };
-
-let stored={};
-try{stored=JSON.parse(localStorage.getItem('cm-state')||'{}')}catch(e){}
-let state={...defaults,...stored,answers:{...defaults.answers,...(stored.answers||{})},calc:{...defaults.calc,...(stored.calc||{})}};
-if(state.answers.capital_range==='lt100')delete state.answers.capital_range;
-if(!state.name&&TELEGRAM_FIRST_NAME)state.name=TELEGRAM_FIRST_NAME;
 
 const app=document.getElementById('app');
 const bottomNav=document.getElementById('bottomNav');
 const menuButton=document.getElementById('menuButton');
+const syncStatus=document.getElementById('syncStatus');
+const toastElement=document.getElementById('toast');
 
-const save=()=>localStorage.setItem('cm-state',JSON.stringify(state));
-const money=n=>new Intl.NumberFormat('ru-RU',{maximumFractionDigits:0}).format(n)+' $';
-const toast=t=>{let e=document.getElementById('toast');e.textContent=t;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2200)};
-const setScreen=s=>{state.screen=s;save();render();scrollTo(0,0)};
-const esc=s=>(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+let state=sanitizeState(readLocalState());
+let syncMode=telegramInitData?'connecting':'local';
+let syncTimer=null;
+let syncRequest=null;
+let toastTimer=null;
 
-function openExternal(url){if(tg?.openLink)tg.openLink(url);else window.open(url,'_blank','noopener')}
+function readLocalState(){
+  for(const key of [LOCAL_KEY,LEGACY_LOCAL_KEY]){
+    try{
+      const value=localStorage.getItem(key);
+      if(value)return JSON.parse(value);
+    }catch(error){console.warn('Local state cannot be read',error)}
+  }
+  return {};
+}
 
-function send(event,extra={}){
-  const p={
-    event,
-    telegram_user_id:telegramUser?.id||null,
-    telegram_username:telegramUser?.username||'',
-    telegram_first_name:telegramUser?.first_name||'',
-    quiz_completed:state.quizCompleted?'yes':'no',
-    name:state.name,
-    phone:state.phone,
-    ...state.answers,
-    recommended_product:state.recommendedProduct,
-    calculator_completed:state.calculatorCompleted?'yes':'no',
-    consent_personal_data:state.consent?'yes':'no',
-    miniapp_completed_at:new Date().toISOString(),
-    ...extra
+function sanitizeState(raw={}){
+  const clean={...defaults};
+  clean.version=APP_VERSION;
+  clean.updatedAt=typeof raw.updatedAt==='string'?raw.updatedAt:null;
+  clean.screen=ALLOWED_SCREENS.has(raw.screen)?raw.screen:'welcome';
+  clean.step=Math.max(0,Math.min(questions.length-1,Number.isInteger(raw.step)?raw.step:0));
+  clean.answers={};
+  if(raw.answers&&typeof raw.answers==='object'){
+    for(const [key,values] of Object.entries(allowedAnswers)){
+      if(values.has(raw.answers[key]))clean.answers[key]=raw.answers[key];
+    }
+  }
+  clean.name=typeof raw.name==='string'?raw.name.trim().slice(0,80):'';
+  clean.nameConfirmed=Boolean(raw.nameConfirmed&&clean.name);
+  clean.phone=typeof raw.phone==='string'?raw.phone.trim().slice(0,40):'';
+  clean.consent=Boolean(raw.consent);
+  clean.quizCompleted=Boolean(raw.quizCompleted);
+  clean.phoneSubmitted=Boolean(raw.phoneSubmitted&&clean.phone&&clean.consent);
+  clean.calculatorCompleted=Boolean(raw.calculatorCompleted);
+  clean.recommendedProduct=['signals','cmlab','education'].includes(raw.recommendedProduct)?raw.recommendedProduct:null;
+  clean.selectedProduct=['signals','cmlab','education'].includes(raw.selectedProduct)?raw.selectedProduct:'signals';
+  clean.profile=raw.profile&&typeof raw.profile==='object'?{
+    title:String(raw.profile.title||'').slice(0,160),
+    subtitle:String(raw.profile.subtitle||'').slice(0,400)
+  }:null;
+  clean.pendingAction=PROTECTED_ACTIONS.has(raw.pendingAction)?raw.pendingAction:null;
+  clean.pendingPayload=raw.pendingPayload&&typeof raw.pendingPayload==='object'?raw.pendingPayload:null;
+  const capital=Number(raw.calc?.capital);
+  const months=Number(raw.calc?.months);
+  clean.calc={
+    capital:Number.isFinite(capital)?Math.max(3000,Math.min(20000,Math.round(capital/500)*500)):5000,
+    months:ALLOWED_MONTHS.includes(months)?months:6
   };
-  if(tg?.sendData)tg.sendData(JSON.stringify(p));
-  else{console.log(p);toast('Данные подготовлены для SaleBot')}
+  if(clean.screen==='analysis')clean.screen=clean.quizCompleted?'result':'quiz';
+  if(clean.screen==='course'&&!clean.phoneSubmitted)clean.screen=clean.nameConfirmed?'materials':'welcome';
+  if(!clean.quizCompleted&&!['welcome','quiz'].includes(clean.screen))clean.screen='welcome';
+  if(!clean.name&&TELEGRAM_FIRST_NAME)clean.name=TELEGRAM_FIRST_NAME.slice(0,80);
+  return clean;
+}
+
+function snapshot(){
+  const data=sanitizeState(state);
+  data.updatedAt=state.updatedAt;
+  return data;
+}
+
+function saveLocal(){
+  try{
+    localStorage.setItem(LOCAL_KEY,JSON.stringify(snapshot()));
+    if(localStorage.getItem(LEGACY_LOCAL_KEY))localStorage.removeItem(LEGACY_LOCAL_KEY);
+  }catch(error){console.warn('Local state cannot be saved',error)}
+}
+
+function touch({sync=true}={}){
+  state.updatedAt=new Date().toISOString();
+  saveLocal();
+  if(sync)scheduleSync();
+}
+
+function setScreen(screen){
+  state.screen=ALLOWED_SCREENS.has(screen)?screen:'welcome';
+  touch();
+  render();
+  window.scrollTo({top:0,behavior:'auto'});
+}
+
+function setSyncMode(mode){
+  syncMode=mode;
+  if(!syncStatus)return;
+  const labels={connecting:'Подключаем профиль…',syncing:'Сохраняем…',synced:'Сохранено',local:'Только на устройстве',error:'Ошибка синхронизации'};
+  syncStatus.textContent=labels[mode]||'';
+  syncStatus.className=`sync-status sync-status--${mode}`;
+}
+
+function toast(text,type='info'){
+  clearTimeout(toastTimer);
+  toastElement.textContent=text;
+  toastElement.dataset.type=type;
+  toastElement.classList.add('show');
+  toastTimer=setTimeout(()=>toastElement.classList.remove('show'),2600);
+}
+
+function esc(value){
+  return String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[char]));
+}
+
+function money(number){return new Intl.NumberFormat('ru-RU',{maximumFractionDigits:0}).format(number)+' $'}
+function haptic(type='selectionChanged'){try{tg?.HapticFeedback?.[type]?.()}catch(error){}}
+
+async function apiRequest(path,{method='GET',body,keepalive=false}={}){
+  if(!telegramInitData)throw new Error('Telegram authorization is unavailable');
+  const response=await fetch(`${API_BASE}/${path}`,{
+    method,
+    headers:{'Content-Type':'application/json','X-Telegram-Init-Data':telegramInitData},
+    body:body===undefined?undefined:JSON.stringify(body),
+    credentials:'same-origin',
+    cache:'no-store',
+    keepalive
+  });
+  let payload={};
+  try{payload=await response.json()}catch(error){}
+  if(!response.ok)throw new Error(payload.error||`API ${response.status}`);
+  return payload;
+}
+
+function scheduleSync(){
+  if(!telegramInitData||syncMode==='connecting')return;
+  clearTimeout(syncTimer);
+  setSyncMode('syncing');
+  syncTimer=setTimeout(()=>syncProfile(),500);
+}
+
+async function syncProfile({keepalive=false}={}){
+  if(!telegramInitData)return false;
+  clearTimeout(syncTimer);
+  if(syncRequest&&!keepalive)return syncRequest;
+  setSyncMode('syncing');
+  const request=apiRequest('profile.php',{method:'POST',body:{state:snapshot(),client_version:APP_VERSION},keepalive})
+    .then(result=>{setSyncMode('synced');return result})
+    .catch(error=>{console.error('Profile sync failed',error);setSyncMode('error');return null})
+    .finally(()=>{if(syncRequest===request)syncRequest=null});
+  if(!keepalive)syncRequest=request;
+  return request;
+}
+
+async function emitEvent(event,payload={}){
+  if(!telegramInitData){console.info('Event (local mode)',event,payload);return false}
+  try{
+    await apiRequest('event.php',{method:'POST',body:{event,payload,client_version:APP_VERSION}});
+    return true;
+  }catch(error){
+    console.error('Event delivery failed',event,error);
+    setSyncMode('error');
+    return false;
+  }
+}
+
+async function loadRemoteProfile(){
+  if(!telegramInitData){setSyncMode('local');return}
+  setSyncMode('connecting');
+  try{
+    const result=await apiRequest('profile.php');
+    const remote=result.profile?.state?sanitizeState(result.profile.state):null;
+    const local=sanitizeState(state);
+    if(remote){
+      const remoteTime=Date.parse(remote.updatedAt||0)||0;
+      const localTime=Date.parse(local.updatedAt||0)||0;
+      state=remoteTime>=localTime?remote:local;
+    }else{
+      state=local;
+    }
+    if(!state.name&&result.telegram_user?.first_name)state.name=String(result.telegram_user.first_name).slice(0,80);
+    saveLocal();
+    setSyncMode('synced');
+    if(!remote||state===local)await syncProfile();
+  }catch(error){
+    console.error('Remote profile load failed',error);
+    setSyncMode('error');
+    toast('Профиль временно работает только на этом устройстве','warning');
+  }
 }
 
 function diagnose(){
-  let a=state.answers,p='education';
-  if(a.interest==='automation'||a.goal==='automate'||['emotions','discipline'].includes(a.main_barrier))p='cmlab';
-  else if(a.interest==='signals'||['unstable','losses'].includes(a.experience))p='signals';
+  const answers=state.answers;
+  let recommendedProduct='education';
+  if(answers.interest==='automation'||answers.goal==='automate'||['emotions','discipline'].includes(answers.main_barrier))recommendedProduct='cmlab';
+  else if(answers.interest==='signals'||['unstable','losses'].includes(answers.experience))recommendedProduct='signals';
+
   let profile={title:'Начинающий инвестор',subtitle:'Вам важно выстроить базу и понять риски до активных действий.'};
-  if(['unstable','losses'].includes(a.experience))profile={title:'Трейдер с опытом, но без системного подхода',subtitle:'Главный резерв роста — дисциплина, повторяемость решений и контроль рисков.'};
-  else if(a.interest==='automation')profile={title:'Инвестор, готовый к системной автоматизации',subtitle:'Вам подходит формат, который снижает влияние эмоций и ручных ошибок.'};
-  else if(a.interest==='signals')profile={title:'Практичный трейдер, ориентированный на готовые решения',subtitle:'Вам важны скорость, структура и понятные рекомендации.'};
-  state.recommendedProduct=p;state.profile=profile;state.quizCompleted=true;save();
+  if(['unstable','losses'].includes(answers.experience))profile={title:'Трейдер с опытом, но без системного подхода',subtitle:'Главный резерв роста — дисциплина, повторяемость решений и контроль рисков.'};
+  else if(answers.interest==='automation')profile={title:'Инвестор, готовый к системной автоматизации',subtitle:'Вам подходит формат, который снижает влияние эмоций и ручных ошибок.'};
+  else if(answers.interest==='signals')profile={title:'Практичный трейдер, ориентированный на готовые решения',subtitle:'Вам важны скорость, структура и понятные рекомендации.'};
+
+  state.recommendedProduct=recommendedProduct;
+  state.profile=profile;
+  state.quizCompleted=true;
+  touch();
 }
 
 function nav(){
-  let show=['dashboard','result','calculator','materials','products','productDetail','course'].includes(state.screen);
-  bottomNav.classList.toggle('hidden',!show);
-  menuButton.classList.toggle('hidden',!show);
-  bottomNav.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.nav===state.screen));
+  const visible=['dashboard','result','calculator','materials','products','productDetail','course'].includes(state.screen);
+  bottomNav.classList.toggle('hidden',!visible);
+  menuButton.classList.toggle('hidden',!visible);
+  bottomNav.querySelectorAll('button').forEach(button=>button.classList.toggle('active',button.dataset.nav===state.screen));
 }
 
-function welcome(){
-  let benefits=[['▶','Видеоуроки по инвестициям и трейдингу'],['▤','Книга «Дневник Успешного Трейдера»'],['◆','Тестовый доступ к продуктам CM Group'],['↗','Финансовый калькулятор'],['✦','2 консультации с экспертом']];
-  return `<section class="screen stack"><div class="hero"><div class="eyebrow">Персональный кабинет инвестора</div><h1>Узнайте, что мешает вам получать результат на финансовых рынках</h1><p class="lead">Ответьте на 5 вопросов. Мы определим ваш уровень, покажем точку роста и откроем персональный набор материалов.</p><button class="btn btn-primary mt-16" data-action="start">Начать диагностику</button><p class="center mt-12">Займёт около 2 минут</p></div><div class="card soft welcome-materials-title"><h3>После прохождения диагностики вам будут доступны следующие материалы</h3></div><div class="grid two welcome-benefits">${benefits.map(([i,x],index)=>`<div class="card benefit ${index===benefits.length-1?'benefit-wide':''}"><div class="benefit-icon">${i}</div><strong>${x}</strong></div>`).join('')}</div></section>`;
-}
-
-function quiz(){
-  let q=questions[state.step],pct=Math.round((state.step+1)/5*100);
-  return `<section class="screen"><div class="card"><div class="progress-head"><span>Вопрос ${state.step+1} из 5</span><span>${pct}%</span></div><div class="progress"><span style="width:${pct}%"></span></div><div class="eyebrow mt-16">До рекомендации осталось менее минуты</div><h2>${q.title}</h2><div class="options">${q.options.map(([v,l])=>`<button class="option ${state.answers[q.key]===v?'selected':''}" data-answer="${v}"><span class="radio"></span><span>${l}</span></button>`).join('')}</div><div class="grid two mt-16"><button class="btn btn-ghost" data-action="prev">Назад</button><button class="btn btn-primary" data-action="next">${state.step===4?'Получить результат':'Далее'}</button></div></div></section>`;
-}
-
-function analysis(){return `<section class="screen"><div class="card center"><span class="profile-badge">Анализ ответов</span><h2 class="mt-16">Формируем персональную рекомендацию</h2><div class="loader-list">${['Анализируем опыт','Определяем уровень риска','Ищем ключевой барьер','Подбираем подходящий путь','Формируем рекомендации'].map((x,i)=>`<div class="loader-item" data-loader="${i}"><span class="loader-dot">•</span><span>${x}</span></div>`).join('')}</div></div></section>`}
-
-function recommendation(){
-  let m={signals:['CM Signals','Готовые сделки и рекомендации для пользователей, которые уже понимают базовые принципы торговли.'],cmlab:['CM Lab','Системный и автоматизированный подход для снижения влияния эмоций и ручных ошибок.'],education:['QUICK START','Базовые уроки по рынкам, рискам и принятию решений.']},[t,d]=m[state.recommendedProduct]||m.education;
-  return `<div class="card product-card recommended"><h3>${t}</h3><p class="muted">${d}</p><button class="btn btn-secondary" data-action="open-product" data-product="${state.recommendedProduct||'education'}">Подробнее</button></div>`;
-}
-
-function result(){
-  let p=state.profile||{title:'Ваш профиль готов',subtitle:'Рекомендация сформирована.'};
-  return `<section class="screen stack"><div class="card"><span class="profile-badge">Ваш результат</span><div class="mt-16"><h2>${p.title}</h2><p class="muted">${p.subtitle}</p></div><div class="card soft mt-16"><strong>Описание профиля</strong><p class="muted mt-12">Ваши ответы показывают, что сейчас для вас важнее всего перейти от отдельных решений к понятной системе: заранее определять правила входа, контролировать риск и оценивать результат по повторяемому процессу, а не по одной сделке.</p></div><div class="card soft"><strong>Главная точка роста</strong><p class="muted mt-12">Сформировать последовательный подход, который помогает снижать влияние эмоций, повторять правильные действия и контролировать риски.</p></div><button class="btn btn-primary mt-16" data-action="continue-name">${state.nameConfirmed?'Открыть подборку':'Сохранить мою подборку'}</button></div>${recommendation()}</section>`;
-}
-
-function nameScreen(){return `<section class="screen"><div class="card"><span class="profile-badge">Персонализация</span><h2 class="mt-16">Ваш результат готов</h2><p class="muted">Как к вам обращаться, чтобы сохранить персональную подборку?</p><div class="field"><label>Имя</label><input id="name" value="${esc(state.name)}" placeholder="Например, Александр"></div><button class="btn btn-primary mt-16" data-action="save-name">Сохранить результат</button></div></section>`}
-
-function gifts(){
-  return `<section class="screen stack"><div class="card"><span class="profile-badge">Стартовая подборка</span><h2 class="mt-16">${state.name?esc(state.name)+', ':''}ваши материалы готовы</h2><p class="muted">Книга, базовый курс и дополнительные видеоуроки уже собраны в одном месте. Для открытия материалов достаточно один раз оставить номер телефона.</p></div>${materialsContent(true)}</section>`;
-}
-
-function phone(){
-  const isGate=Boolean(state.pendingAction);
-  return `<section class="screen"><div class="card"><span class="profile-badge">Полный доступ</span><h2 class="mt-16">${isGate?'Откройте выбранный материал':'Откройте материалы и сохраните расчёт'}</h2><p class="muted">Укажите телефон один раз — после этого все материалы и функции будут открываться без повторного запроса.</p><div class="field"><label>Телефон</label><input id="phone" type="tel" value="${esc(state.phone)}" placeholder="+7 999 000-00-00"></div><label class="checkline mt-16"><input id="consent" type="checkbox" ${state.consent?'checked':''}><span>Согласен на <button class="legal-link" type="button" data-action="privacy-policy">обработку персональных данных</button> и получение информационных сообщений.</span></label><button class="btn btn-primary mt-16" data-action="submit-phone">Получить полный доступ</button><button class="btn btn-ghost mt-12" data-action="cancel-phone">Назад</button></div></section>`;
-}
-
-function dashboard(){
-  let c=[state.quizCompleted,state.calculatorCompleted,state.phoneSubmitted].filter(Boolean).length;
-  return `<section class="screen stack"><div class="hero"><div class="eyebrow">Личный кабинет</div><h1>${state.name?'Здравствуйте, '+esc(state.name):'Ваш персональный кабинет'}</h1><p class="lead">Диагностика сохранена. Продолжайте знакомство с возможностями CM Group.</p><div class="kpi-row"><div class="kpi"><strong>${state.profile?.title?'Готов':'—'}</strong><span>профиль</span></div><div class="kpi"><strong>${c}/3</strong><span>этапа</span></div><div class="kpi"><strong>${state.phoneSubmitted?'100%':'67%'}</strong><span>доступ</span></div></div></div><div class="grid two dashboard-grid"><button class="card" data-nav="result"><strong>Мой результат</strong></button><button class="card" data-nav="calculator"><strong>Калькулятор</strong></button><button class="card" data-nav="materials"><strong>Материалы</strong></button><button class="card" data-nav="products"><strong>Продукты</strong></button></div><button class="btn btn-primary" data-action="return-bot">Вернуться в Telegram-бот</button><button class="btn btn-ghost" data-action="reset">Сбросить демо</button></section>`;
-}
-
-function calculator(){
-  let c=+state.calc.capital,m=+state.calc.months,s=c*Math.pow(1.17,m),l=c*Math.pow(1.12,m),max=Math.max(s,l),plot={left:52,right:340,top:16,bottom:176};
-  let x=i=>plot.left+i/m*(plot.right-plot.left),y=v=>plot.bottom-v/max*(plot.bottom-plot.top),poly=r=>Array.from({length:m+1},(_,i)=>`${x(i)},${y(c*Math.pow(1+r,i))}`).join(' '),yTicks=Array.from({length:5},(_,i)=>{let v=max*i/4;return `<g class="chart-axis-tick"><line x1="${plot.left}" y1="${y(v)}" x2="${plot.right}" y2="${y(v)}"/><text x="${plot.left-7}" y="${y(v)+3}" text-anchor="end">${Math.round(v).toLocaleString('ru-RU')}</text></g>`}).join(''),monthStep=Math.max(1,Math.ceil(m/6)),monthTicks=Array.from({length:m+1},(_,i)=>i).filter(i=>i===0||i===m||i%monthStep===0).map(i=>`<g class="chart-axis-tick"><line x1="${x(i)}" y1="${plot.bottom}" x2="${x(i)}" y2="${plot.bottom+4}"/><text x="${x(i)}" y="${plot.bottom+17}" text-anchor="middle">${i}</text></g>`).join('');
-  return `<section class="screen stack"><div class="card"><span class="profile-badge">Финансовый калькулятор</span><h2 class="mt-16">Рассчитайте ваш доход</h2><div class="field"><label>Стартовый капитал ($)</label><input id="capital" type="number" min="3000" max="20000" step="500" value="${c}"></div><div class="field mt-16"><label>Срок инвестиций (месяцев)</label><select id="months">${[3,4,5,6,9,12].map(x=>`<option ${x===m?'selected':''}>${x}</option>`).join('')}</select></div><button class="btn btn-primary mt-16" data-action="calculate">Рассчитать</button></div><div class="card"><h3>Размер вашего дохода при использовании продуктов CM Group</h3><div class="chart mt-16"><svg viewBox="0 0 360 220" preserveAspectRatio="none"><g class="chart-grid">${yTicks}</g><line class="chart-axis" x1="${plot.left}" y1="${plot.top}" x2="${plot.left}" y2="${plot.bottom}"/><line class="chart-axis" x1="${plot.left}" y1="${plot.bottom}" x2="${plot.right}" y2="${plot.bottom}"/>${monthTicks}<text class="chart-axis-label" x="196" y="214" text-anchor="middle">Месяцы</text><text class="chart-axis-label" x="12" y="96" text-anchor="middle" transform="rotate(-90 12 96)">Доход ($)</text><polyline class="chart-line-a" points="${poly(.17)}"/><polyline class="chart-line-b" points="${poly(.12)}"/></svg></div><div class="grid two"><div class="stat"><span class="signals-label">CM Signals</span><strong>${money(s)}</strong></div><div class="stat"><span class="lab-label">CM Lab</span><strong>${money(l)}</strong></div></div><p class="disclaimer mt-16">Расчёт носит информационный характер и не является гарантией доходности или индивидуальной инвестиционной рекомендацией.</p></div></section>`;
-}
-
-function lockedMediaCard(title,desc,action,payload=''){
-  return `<div class="card"><h3>${title}</h3><p class="muted">${desc}</p><div class="locked-preview"><span class="locked-preview__icon">▶</span><span>Доступ откроется после номера телефона</span></div><button class="btn btn-secondary mt-16" data-action="${action}" ${payload}>Смотреть урок</button></div>`;
-}
-
-function mediaCard(title,desc,url,isLink=false){
-  if(!state.phoneSubmitted)return lockedMediaCard(title,desc,'open-lesson',`data-url="${url}" data-link="${isLink?'yes':'no'}"`);
-  return `<div class="card"><h3>${title}</h3><p class="muted">${desc}</p>${isLink?`<button class="btn btn-secondary" data-action="open-link" data-url="${url}">Смотреть урок</button>`:`<div class="video-frame mt-16"><video controls playsinline preload="metadata" src="${url}"></video></div>`}</div>`;
-}
-
-function materialsContent(showAccessButtons=false){
-  return `<div class="card"><h3>Ваши материалы</h3><div class="unlock"><div><strong>Книга «Дневник Успешного Трейдера»</strong></div><button class="mini-btn" data-action="get-book">Получить</button></div><div class="unlock"><div><strong>Базовый курс по трейдингу</strong><div class="course-meta">5 видеоуроков</div></div><button class="mini-btn" data-action="open-course">Посмотреть</button></div><div class="unlock"><div><strong>2 консультации с экспертом</strong><div class="muted">Персональный разбор и ответы на вопросы</div></div><button class="mini-btn" data-action="product-consultation" data-product="${state.recommendedProduct||'signals'}">Записаться</button></div></div>${mediaCard('Видеоурок 1','Как устроены осцилляторы и используются индикаторы в торговле.',LESSON_1,true)}${mediaCard('Видеоурок 2','Риск-менеджмент. Правило «трёх».',LESSON_2)}<div class="card"><h3>Продукты CM Group</h3><p class="muted">Ниже можно подробнее познакомиться с CM Signals и CM Lab.</p><button class="btn btn-secondary" data-action="open-product" data-product="signals">Подробнее о CM Signals</button><button class="btn btn-secondary mt-12" data-action="open-product" data-product="cmlab">Подробнее о CM Lab</button>${showAccessButtons&&!state.phoneSubmitted?`<button class="btn btn-primary mt-16" data-action="full-access">Открыть полный доступ</button>`:''}</div>`;
-}
-
-function materials(){return `<section class="screen stack"><div class="card"><span class="profile-badge">Материалы</span><h2 class="mt-16">Ваша обучающая подборка</h2><p class="muted">Книга, базовый курс, дополнительные видеоуроки и консультации доступны в одном разделе.</p>${state.phoneSubmitted?'<p class="access-note">✓ Полный доступ открыт</p>':''}</div>${materialsContent(false)}</section>`}
-
-function course(){
-  if(!state.phoneSubmitted){state.pendingAction='open-course';save();return phone()}
-  return `<section class="screen stack"><button class="back-link" data-nav="materials">← К материалам</button><div class="card course-intro"><span class="profile-badge">Базовый курс</span><h2 class="mt-16">Базовый курс по трейдингу</h2><p class="muted">Пять последовательных уроков из действующего сценария бота CM Group.</p></div>${BASIC_COURSE.map((lesson,index)=>`<div class="card course-lesson"><div class="lesson-number">${index+1}</div><h3>${lesson.title}</h3><div class="video-frame mt-16"><video controls playsinline preload="metadata" src="${lesson.url}"></video></div></div>`).join('')}</section>`;
-}
-
-function products(){
-  let a=[['signals','CM Signals','Банковские торговые сигналы, обучение и сопровождение эксперта.'],['cmlab','CM Lab','Автоматические торговые студии, работающие по системному алгоритму.'],['education','QUICK START','Базовый курс по финансовым рынкам, рискам и торговым инструментам.']];
-  a.sort((x,y)=>x[0]===state.recommendedProduct?-1:y[0]===state.recommendedProduct?1:0);
-  return `<section class="screen stack"><div class="card"><span class="profile-badge">Продукты CM Group</span><h2 class="mt-16">Выберите подходящий формат</h2><p class="muted">Рекомендуемый продукт расположен первым. Откройте карточку, чтобы посмотреть описание и видео.</p></div>${a.map(([id,t,d])=>`<div class="card product-card ${id===state.recommendedProduct?'recommended':''}"><div class="product-accent ${id}"></div><h3>${t}</h3><p class="muted">${d}</p><button class="btn btn-secondary" data-action="open-product" data-product="${id}">Подробнее</button></div>`).join('')}</section>`;
-}
-
-function productDetail(){
-  const id=state.selectedProduct||'signals';
-  const data={signals:{title:'CM Signals',label:'Банковские сигналы',color:'signals',intro:'Формат для тех, кто хочет получать готовые рекомендации по сделкам и уделять торговле около 15 минут в неделю.',video:SIGNALS_VIDEO,how:['Получаете SMS с рекомендацией о совершении сделки','Копируете торговые позиции в мобильной платформе','Контролируете результат вместе с сопровождением эксперта'],benefits:['Банковские торговые сигналы','Сопровождение от эксперта','Курс QUICK START в подарок','Доступ в закрытый клуб трейдеров'],variants:[['CM Signals','Базовые банковские сигналы и рекомендации'],['CM News','CM Signals плюс SMS-рекомендации перед ключевыми новостными событиями'],['CM Stocks','Сигналы по акциям крупных компаний и фондовым индексам']]},cmlab:{title:'CM Lab',label:'Автоматические торговые студии',color:'cmlab',intro:'Системный формат для пользователей, которые хотят автоматизировать торговлю и снизить влияние эмоций и ручных ошибок.',video:LAB_VIDEO,how:['Подключается торговый счёт','Выбирается конфигурация CM Lab под размер капитала и задачи','Система анализирует рынок и автоматически выставляет сделки'],benefits:['Автоматизированная логика','Работа 24 часа в сутки 5 дней в неделю','Несколько конфигураций под разные инструменты','Возможность подобрать решение под размер депозита'],variants:[['CM Lab Start','Базовая конфигурация для небольших депозитов'],['CM Lab Advanced','Расширенная фильтрация и несколько автономных модулей'],['CM Lab Pro','Мультиинструментальная система с расширенной диверсификацией'],['CM Lab Metals','Конфигурация на драгоценных металлах'],['CM Lab Stocks','Студия на фондовых индексах'],['Golden / Energy LAB','Специализированные конфигурации на золоте и энергетических инструментах']]},education:{title:'QUICK START',label:'Обучение',color:'education',intro:'Курс для быстрого освоения базовых принципов торговли на фондовых, валютных и сырьевых рынках.',video:'https://kinescope.io/tGFd2YBtc7khcECWLTmy9A',how:['Изучаете основы финансовых рынков и торговые терминалы','Осваиваете технический анализ и риск-менеджмент','Закрепляете материал на практике и домашних заданиях'],benefits:['10 уроков и 3 модуля','Технический анализ','Риск-менеджмент','Практика, консультации и наставничество'],variants:[['QUICK START','Базовая программа обучения'],['Персональный разбор','Подбор следующего шага под вашу цель и уровень опыта']]}}[id];
-  return `<section class="screen stack"><button class="back-link" data-nav="products">← Все продукты</button><div class="card product-hero ${data.color}"><span class="profile-badge">${data.label}</span><h2 class="mt-16">${data.title}</h2><p class="muted">${data.intro}</p></div><div class="card"><h3>Видео о продукте</h3><div class="video-frame mt-16"><video controls playsinline preload="metadata" src="${data.video}"></video></div></div><div class="card"><h3>Как это работает</h3><div class="steps-list">${data.how.map((x,i)=>`<div class="step-row"><span>${i+1}</span><p>${x}</p></div>`).join('')}</div></div><div class="card"><h3>Что входит</h3><div class="feature-list">${data.benefits.map(x=>`<div class="feature-item"><span>✓</span><p>${x}</p></div>`).join('')}</div></div><div class="card"><h3>Варианты продукта</h3>${data.variants.map(([t,d])=>`<div class="variant-row"><div><strong>${t}</strong><p class="muted">${d}</p></div></div>`).join('')}</div><div class="card soft"><h3>Следующий шаг</h3><p class="muted">Оставьте заявку, чтобы получить актуальные условия, подобрать конфигурацию и задать вопросы специалисту.</p><button class="btn btn-primary" data-action="product-consultation" data-product="${id}">Получить консультацию</button><button class="btn btn-ghost mt-12" data-action="product-to-bot" data-product="${id}">Продолжить в Telegram-боте</button></div><p class="disclaimer center">Торговля финансовыми инструментами связана с риском потери капитала. Информация о продукте не является гарантией доходности или индивидуальной инвестиционной рекомендацией.</p></section>`;
-}
-
-function requirePhone(action,payload={}){
-  if(state.phoneSubmitted){performProtectedAction(action,payload);return true}
-  state.pendingAction=action;state.pendingPayload=payload;save();setScreen('phone');return false;
-}
-
-function performProtectedAction(action,payload={}){
-  if(action==='get-book'){send('book_opened');openExternal(BOOK_URL)}
-  if(action==='open-course'){send('basic_course_opened');setScreen('course')}
-  if(action==='open-lesson'){
-    send('lesson_opened',{lesson_url:payload.url||''});
-    if(payload.isLink)openExternal(payload.url);else setScreen('materials');
-  }
-  if(action==='product-consultation'){
-    send('product_consultation_requested',{product:payload.product});
-    toast('Заявка передана специалисту');
-  }
-  if(action==='full-access'){send('full_access_opened');setScreen('materials')}
-}
-
-function render(){
-  nav();
-  let f={welcome,quiz,analysis,result,name:nameScreen,gifts,phone,dashboard,calculator,materials,course,products,productDetail}[state.screen]||welcome;
-  app.innerHTML=f();bind();
-}
-
-function bind(){
-  document.querySelectorAll('[data-nav]').forEach(e=>e.onclick=()=>setScreen(e.dataset.nav==='home'?'welcome':e.dataset.nav));
-  document.querySelectorAll('[data-answer]').forEach(e=>e.onclick=()=>{state.answers[questions[state.step].key]=e.dataset.answer;save();const group=e.closest('.options');if(group){group.querySelectorAll('.option').forEach(x=>x.classList.remove('selected'));e.classList.add('selected')}});
-  document.querySelectorAll('[data-action]').forEach(e=>e.onclick=()=>{
-    let a=e.dataset.action;
-    if(a==='start'){state.step=0;setScreen('quiz')}
-    if(a==='prev'&&state.step>0){state.step--;save();render()}
-    if(a==='next'){
-      if(!state.answers[questions[state.step].key])return toast('Выберите вариант');
-      if(state.step<4){state.step++;save();render()}else{diagnose();setScreen('analysis');setTimeout(runAnalysis,100)}
-    }
-    if(a==='continue-name')setScreen(state.nameConfirmed?'gifts':'name');
-    if(a==='save-name'){
-      let v=document.getElementById('name').value.trim();
-      if(v.length<2)return toast('Введите имя');
-      state.name=v;state.nameConfirmed=true;save();send('name_saved');setScreen('gifts');
-    }
-    if(a==='submit-phone'){
-      let p=document.getElementById('phone').value.trim(),c=document.getElementById('consent').checked;
-      if(p.replace(/\D/g,'').length<10)return toast('Введите корректный телефон');
-      if(!c)return toast('Нужно согласие');
-      const pending=state.pendingAction,payload=state.pendingPayload||{};
-      state.phone=p;state.consent=true;state.phoneSubmitted=true;state.pendingAction=null;state.pendingPayload=null;save();
-      send('lead_completed');
-      if(pending)performProtectedAction(pending,payload);else setScreen('materials');
-    }
-    if(a==='cancel-phone'){state.pendingAction=null;state.pendingPayload=null;save();setScreen('gifts')}
-    if(a==='calculate'){
-      state.calc={capital:+document.getElementById('capital').value,months:+document.getElementById('months').value};
-      state.calculatorCompleted=true;save();send('calculator_completed',{calculator:state.calc});render();toast('Расчёт обновлён');
-    }
-    if(a==='open-product'){state.selectedProduct=e.dataset.product;save();setScreen('productDetail')}
-    if(a==='product-consultation')requirePhone('product-consultation',{product:e.dataset.product});
-    if(a==='product-to-bot'){send('product_to_bot',{product:e.dataset.product});if(tg?.close)tg.close();else toast('В Telegram откроется продолжение сценария в боте')}
-    if(a==='return-bot'){send('return_to_bot');if(tg?.close)tg.close();else toast('В Telegram окно закроется и вернёт пользователя в бота')}
-    if(a==='get-book')requirePhone('get-book');
-    if(a==='open-course')requirePhone('open-course');
-    if(a==='open-lesson')requirePhone('open-lesson',{url:e.dataset.url,isLink:e.dataset.link==='yes'});
-    if(a==='full-access')requirePhone('full-access');
-    if(a==='open-link')openExternal(e.dataset.url);
-    if(a==='privacy-policy'){send('privacy_policy_requested');toast('Политика конфиденциальности доступна в Telegram-боте CM Group')}
-    if(a==='reset'&&confirm('Сбросить демо?')){localStorage.removeItem('cm-state');state={...defaults,answers:{},calc:{capital:5000,months:6},name:TELEGRAM_FIRST_NAME};render()}
-  });
-}
-
-function runAnalysis(){
-  let a=[...document.querySelectorAll('[data-loader]')];
-  a.forEach((e,i)=>setTimeout(()=>{e.classList.add('done');e.querySelector('.loader-dot').textContent='✓';if(i===a.length-1)setTimeout(()=>setScreen('result'),650)},455+i*520));
-}
-
-bottomNav.onclick=e=>{let b=e.target.closest('[data-nav]');if(b)setScreen(b.dataset.nav)};
-menuButton.onclick=()=>setScreen('dashboard');
-save();
-render();

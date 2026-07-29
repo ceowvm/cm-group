@@ -1,28 +1,47 @@
 <!doctype html>
 <html lang="ru">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-<meta name="theme-color" content="#0f064a"/>
-<title>CM Group — персональный кабинет</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet"/><link rel="stylesheet" href="styles.css"/>
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0f064a">
+  <meta name="robots" content="noindex,nofollow">
+  <title>CM Group — персональный кабинет</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=3.0.0">
+  <link rel="stylesheet" href="production.css?v=3.0.0">
+  <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
 </head>
 <body>
-<div class="app-shell">
-<header class="topbar">
-<div class="brand" data-nav="home"><div class="logo-mark"><img src="logo.png" alt=""></div><div><div class="brand-title">CM Group</div><div class="brand-subtitle">Персональный кабинет</div></div></div>
-<button class="icon-btn hidden" id="menuButton">☰</button>
-</header>
-<main id="app" class="app"></main>
-<nav id="bottomNav" class="bottom-nav hidden">
-<button data-nav="dashboard"><span>⌂</span><small>Главная</small></button>
-<button data-nav="result"><span>◎</span><small>Результат</small></button>
-<button data-nav="calculator"><span>↗</span><small>Расчёт</small></button>
-<button data-nav="materials"><span>◆</span><small>Материалы</small></button>
-</nav>
-</div>
-<div id="toast" class="toast"></div>
-<script src="app.js"></script>
+  <div class="app-shell">
+    <header class="topbar">
+      <button class="brand brand-button" type="button" data-nav="home" aria-label="На главный экран">
+        <span class="logo-mark"><img src="logo.png" alt="CM Group" width="50" height="50"></span>
+        <span>
+          <span class="brand-title">CM Group</span>
+          <span class="brand-subtitle">Персональный кабинет</span>
+        </span>
+      </button>
+      <div class="topbar-actions">
+        <span id="syncStatus" class="sync-status sync-status--connecting" aria-live="polite">Подключаем профиль…</span>
+        <button class="icon-btn hidden" id="menuButton" type="button" aria-label="Открыть личный кабинет">☰</button>
+      </div>
+    </header>
+    <main id="app" class="app" aria-live="polite"></main>
+    <nav id="bottomNav" class="bottom-nav hidden" aria-label="Основная навигация">
+      <button type="button" data-nav="dashboard"><span aria-hidden="true">⌂</span><small>Главная</small></button>
+      <button type="button" data-nav="result"><span aria-hidden="true">◎</span><small>Результат</small></button>
+      <button type="button" data-nav="calculator"><span aria-hidden="true">↗</span><small>Расчёт</small></button>
+      <button type="button" data-nav="materials"><span aria-hidden="true">◆</span><small>Материалы</small></button>
+    </nav>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <noscript><div class="noscript">Для работы приложения необходимо включить JavaScript.</div></noscript>
+  <script src="app.js?v=3.0.0"></script>
+  <script src="js/views-basic.js?v=3.0.0"></script>
+  <script src="js/views-materials.js?v=3.0.0"></script>
+  <script src="js/views-products.js?v=3.0.0"></script>
+  <script src="js/main.js?v=3.0.0"></script>
 </body>
 </html>
