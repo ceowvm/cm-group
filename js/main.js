@@ -56,8 +56,11 @@ function bind(){
       state.pendingAction=null;
       state.pendingPayload=null;
       touch();
+      const opensExternal=pending==='get-book'||(pending==='open-lesson'&&payload.isLink);
+      if(opensExternal)void performProtectedAction(pending,payload);
       await Promise.allSettled([syncProfile(),emitEvent('lead_completed')]);
-      if(pending)await performProtectedAction(pending,payload);else setScreen('materials');
+      if(pending&&!opensExternal)await performProtectedAction(pending,payload);
+      else if(!pending)setScreen('materials');
     }else if(action==='cancel-phone'){
       state.pendingAction=null;
       state.pendingPayload=null;
