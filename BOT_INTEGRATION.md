@@ -2,66 +2,116 @@
 
 ## Как открывать Mini App
 
-Рекомендуемый вариант — inline-кнопка Web App под сообщением или Menu Button бота.
-
-URL приложения:
+Используйте inline-кнопку Web App под сообщением, Menu Button или Main Mini App.
 
 ```text
 https://app.cmgroup.pro/
 ```
 
-Этот способ передаёт приложению Telegram `initData`, необходимый для подтверждённого Telegram ID и восстановления профиля на разных устройствах.
+Так Telegram передаёт подписанный `initData`, а сервер надёжно определяет Telegram ID и восстанавливает профиль на разных устройствах.
 
-## Почему приложение больше не использует sendData для каждого действия
-
-`Telegram.WebApp.sendData()`:
-
-- работает только при запуске из reply-кнопки Web App;
-- закрывает Mini App после отправки;
-- не подходит для многоэкранного личного кабинета и постоянного профиля.
-
-События теперь идут по схеме:
+## Схема передачи данных
 
 ```text
-Mini App → api/event.php → журнал на REG.RU → webhook SaleBot/CRM
+Mini App → https://app.cmgroup.pro/api/event.php → журнал в /data → входящий webhook SaleBot/CRM
 ```
 
-## Какие события формируются
+Приложение не использует `sendData()` для каждого действия: этот метод закрывает Mini App и не подходит постоянному личному кабинету.
 
-- `name_saved`;
-- `lead_completed`;
-- `calculator_completed`;
-- `book_opened`;
-- `basic_course_opened`;
-- `lesson_opened`;
-- `product_consultation_requested`;
-- `full_access_opened`;
-- `privacy_policy_opened`;
-- `return_to_bot`.
+## Что передаётся
 
-Webhook получает Telegram ID, username, имя Telegram, сохранённое имя, телефон, согласие, ответы квиза, профиль и полезную нагрузку события.
+Webhook получает JSON со следующими блоками:
 
-## Что нужно получить в SaleBot
+- `event` — название события;
+- `telegram_user.id`, `username`, `first_name`, `last_name`;
+- `profile.name`, `profile.phone`, `profile.consent`;
+- `profile.state.answers` — ответы квиза;
+- `profile.state.recommendedProduct`, `profile`, `calculatorCompleted`;
+- `payload` — данные конкретного действия;
+- `created_at`, `source`.
 
-Нужен URL входящего webhook, принимающий POST JSON. После получения адреса заполните в `api/config.local.php`:
+Основные события:
+
+- `name_saved` — пользователь сохранил имя;
+- `lead_completed` — оставил телефон и открыл полный доступ;
+- `product_consultation_requested` — запросил консультацию;
+- `calculator_completed` — выполнил расчёт;
+- `book_opened`, `basic_course_opened`, `lesson_opened`;
+- `full_access_opened`, `return_to_bot`.
+
+## Что требуется настроить в SaleBot
+
+Нужен реальный входящий HTTP/webhook-адрес SaleBot, который умеет найти клиента по Telegram ID и записать переменные. В текущем выгруженном сценарии такого обработчика нет, поэтому одной загрузки файлов приложения недостаточно.
+
+В обработчике SaleBot нужно:
+
+1. искать клиента по `telegram_user.id`;
+2. записывать в карточку клиента `name`, `phone` и переменные квиза;
+3. при `lead_completed` отметить полный доступ и при необходимости запустить ветку выдачи материалов;
+4. при `product_consultation_requested` создать заявку или отправить уведомление менеджеру;
+5. при `calculator_completed` сохранить параметры расчёта;
+6. возвращать HTTP 2xx, чтобы приложение отметило передачу успешной.
+
+Рекомендуемые переменные SaleBot:
+
+```text
+quiz_completed
+name
+phone
+experience
+interest
+capital_range
+main_barrier
+goal
+recommended_product
+calculator_completed
+consent_personal_data
+miniapp_completed_at
+miniapp_last_event
+```
+
+Этот состав соответствует утверждённой воронке CM Group.
+
+## Настройка приложения
+
+В `api/config.local.php` укажите:
 
 ```php
-'event_webhook_url' => 'https://... ',
-'event_webhook_secret' => 'случайная_секретная_строка',
+'event_webhook_url' => 'https://РЕАЛЬНЫЙ-ВХОДЯЩИЙ-АДРЕС-SALEBOT',
+'event_webhook_secret' => 'СЛУЧАЙНАЯ_ДЛИННАЯ_СТРОКА',
 ```
 
-При наличии секрета сервер добавляет заголовок:
+При заполненном секрете запрос содержит заголовок:
 
 ```text
-X-CM-Signature: sha256=<HMAC>
+X-CM-Signature: sha256=<HMAC-SHA256 тела запроса>
 ```
+
+Если конкретный входящий механизм SaleBot не поддерживает проверку HMAC, поле `event_webhook_secret` можно временно оставить пустым, но URL должен быть непубличным и трудноподбираемым.
+
+## Уведомление менеджеру
+
+Триггер в SaleBot: `event = product_consultation_requested`.
+
+Текст уведомления должен содержать:
+
+```text
+Новая заявка на консультацию из Mini App
+Имя: #{name}
+Телефон: #{phone}
+Telegram ID: #{telegram_user_id}
+Продукт: #{recommended_product}
+Ответы квиза: опыт / интерес / капитал / барьер / цель
+```
+
+Получателей уведомления и канал доставки нужно выбрать в самом SaleBot: личное сообщение менеджеру, рабочая группа или CRM-задача.
 
 ## Возврат в бот
 
-Кнопки «Вернуться в Telegram-бот» и «Продолжить в Telegram-боте» открывают:
+Кнопки приложения открывают:
 
 ```text
 https://t.me/cmgroup_pro_bot
 ```
 
-и передают `start`-параметр, по которому можно продолжить нужную ветку сценария.
+со `start`-параметром для продолжения нужной ветки.
