@@ -1,5 +1,6 @@
 function render(){
   nav();
+  closePopupMenu();
   const renderer={welcome,quiz,analysis,result,name:nameScreen,gifts,phone,dashboard,calculator,materials,course,products,productDetail}[state.screen]||welcome;
   app.innerHTML=renderer();
   bind();
@@ -126,11 +127,49 @@ function runAnalysis(){
   },455+index*520));
 }
 
+const popupMenu=document.getElementById('popupMenu');
+
+function closePopupMenu(){
+  if(!popupMenu||!menuButton)return;
+  popupMenu.classList.add('hidden');
+  menuButton.setAttribute('aria-expanded','false');
+}
+
+function togglePopupMenu(){
+  if(!popupMenu||!menuButton)return;
+  const willOpen=popupMenu.classList.contains('hidden');
+  popupMenu.classList.toggle('hidden',!willOpen);
+  menuButton.setAttribute('aria-expanded',String(willOpen));
+}
+
 bottomNav.addEventListener('click',event=>{
   const button=event.target.closest('[data-nav]');
   if(button)setScreen(button.dataset.nav);
 });
-menuButton.addEventListener('click',()=>setScreen('dashboard'));
+menuButton.addEventListener('click',event=>{
+  event.stopPropagation();
+  togglePopupMenu();
+});
+popupMenu?.addEventListener('click',event=>{
+  event.stopPropagation();
+  const navButton=event.target.closest('[data-menu-nav]');
+  if(navButton){
+    closePopupMenu();
+    setScreen(navButton.dataset.menuNav);
+    return;
+  }
+  const actionButton=event.target.closest('[data-menu-action="consultation"]');
+  if(actionButton){
+    closePopupMenu();
+    requirePhone('product-consultation',{product:state.recommendedProduct||state.selectedProduct||'general'});
+  }
+});
+document.addEventListener('click',event=>{
+  if(!popupMenu?.contains(event.target)&&event.target!==menuButton)closePopupMenu();
+});
+document.addEventListener('keydown',event=>{
+  if(event.key==='Escape')closePopupMenu();
+});
 window.addEventListener('online',()=>{if(telegramInitData){setSyncMode('syncing');syncProfile()}});
 window.addEventListener('offline',()=>setSyncMode('error'));
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')syncProfile({keepalive:true})});
@@ -139,6 +178,7 @@ async function init(){
   app.innerHTML=loading();
   bottomNav.classList.add('hidden');
   menuButton.classList.add('hidden');
+  closePopupMenu();
   await loadRemoteProfile();
   state=sanitizeState(state);
   saveLocal();
