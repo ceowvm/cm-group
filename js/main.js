@@ -86,7 +86,7 @@ function bind(){
       touch();
       setScreen('productDetail');
     }else if(action==='product-consultation'){
-      requirePhone('product-consultation',{product:element.dataset.product});
+      requirePhone('product-consultation',{product:element.dataset.product,source:'product_screen'});
     }else if(action==='product-to-bot'){
       await goToBot(`miniapp_${element.dataset.product||'product'}`);
     }else if(action==='return-bot'){
@@ -161,7 +161,7 @@ popupMenu?.addEventListener('click',event=>{
   const actionButton=event.target.closest('[data-menu-action="consultation"]');
   if(actionButton){
     closePopupMenu();
-    requirePhone('product-consultation',{product:state.recommendedProduct||state.selectedProduct||'general'});
+    requirePhone('product-consultation',{product:state.recommendedProduct||state.selectedProduct||'general',source:'popup_menu'});
   }
 });
 document.addEventListener('click',event=>{
