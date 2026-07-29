@@ -1,5 +1,9 @@
 api/config.local.php
 api/storage/*.sqlite
 api/storage/*.sqlite-*
+data/profiles/
+data/events/
+data/*.sqlite
+data/*.sqlite-*
 .DS_Store
 Thumbs.db
