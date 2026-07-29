@@ -6,7 +6,10 @@ function render(){
 }
 
 function bind(){
-  document.querySelectorAll('[data-nav]').forEach(element=>element.addEventListener('click',()=>setScreen(element.dataset.nav==='home'?'welcome':element.dataset.nav)));
+  document.querySelectorAll('[data-nav]').forEach(element=>element.addEventListener('click',()=>{
+    const target=element.dataset.nav==='home'?(state.quizCompleted?'dashboard':'welcome'):element.dataset.nav;
+    setScreen(target);
+  }));
   document.querySelectorAll('[data-answer]').forEach(element=>element.addEventListener('click',()=>{
     state.answers[questions[state.step].key]=element.dataset.answer;
     touch();
