@@ -1,0 +1,35 @@
+name: Build REG.RU package
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build deployment folder
+        run: |
+          mkdir -p dist/cm-group
+          rsync -a ./ dist/cm-group/ \
+            --exclude '.git/' \
+            --exclude '.github/' \
+            --exclude 'dist/' \
+            --exclude 'AUDIT.md' \
+            --exclude 'BOT_INTEGRATION.md' \
+            --exclude 'REG_RU_SETUP.md' \
+            --exclude 'README.md' \
+            --exclude 'data/profiles/' \
+            --exclude 'data/events/' \
+            --exclude 'api/storage/'
+          cp api/config.example.php dist/cm-group/api/config.local.example.php
+          cd dist
+          zip -r CM_Group_REG_RU.zip cm-group
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CM_Group_REG_RU
+          path: dist/CM_Group_REG_RU.zip
+          if-no-files-found: error
+          retention-days: 30
