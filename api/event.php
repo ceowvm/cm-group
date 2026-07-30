@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require __DIR__ . '/bootstrap.php';
+require __DIR__ . '/salebot.php';
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
     cm_fail('Метод не поддерживается', 405);
@@ -26,7 +27,7 @@ try {
     cm_fail('Не удалось сохранить событие', 500, $exception);
 }
 
-$forwarded = cm_forward_event([
+$event = [
     'event' => $eventName,
     'payload' => $payload,
     'telegram_user' => $user,
@@ -38,6 +39,16 @@ $forwarded = cm_forward_event([
     ] : null,
     'created_at' => $now,
     'source' => 'cm_group_miniapp',
-]);
+];
 
-cm_response(['ok' => true, 'stored' => true, 'forwarded' => $forwarded, 'storage' => cm_storage_driver()]);
+$salebotForwarded = cm_salebot_forward($event);
+$webhookForwarded = $salebotForwarded ? false : cm_forward_event($event);
+
+cm_response([
+    'ok' => true,
+    'stored' => true,
+    'forwarded' => $salebotForwarded || $webhookForwarded,
+    'salebot_forwarded' => $salebotForwarded,
+    'webhook_forwarded' => $webhookForwarded,
+    'storage' => cm_storage_driver(),
+]);
