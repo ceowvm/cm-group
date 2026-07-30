@@ -8,6 +8,16 @@ function cm_salebot_configured(): bool
         && trim((string)($config['salebot_group_id'] ?? '')) !== '';
 }
 
+function cm_salebot_response_success(?array $response): bool
+{
+    if ($response === null) return false;
+    if ($response === []) return true;
+    if (isset($response['status'])) return strtolower((string)$response['status']) === 'success';
+    if (isset($response['success'])) return (bool)$response['success'];
+    if (isset($response['ok'])) return (bool)$response['ok'];
+    return true;
+}
+
 function cm_salebot_request(string $method, array $payload): ?array
 {
     $config = cm_config();
@@ -95,7 +105,7 @@ function cm_salebot_forward(array $event): bool
     ]);
     $clientId = cm_salebot_extract_client_id($lookup, $telegramId);
     if ($clientId === null) {
-        error_log('[CM Group API] SaleBot client not found for Telegram ID ' . $telegramId);
+        error_log('[CM Group API] SaleBot client not found for Telegram ID ' . $telegramId . '; group_id=' . $groupId);
         return false;
     }
 
@@ -121,18 +131,15 @@ function cm_salebot_forward(array $event): bool
         'client_id' => (int)$clientId,
         'variables' => $variables,
     ]);
-    if ($saved === null) return false;
+    if (!cm_salebot_response_success($saved)) return false;
 
     if (($event['event'] ?? '') === 'product_consultation_requested') {
-        $callback = cm_salebot_request('tg_callback', [
-            'user_id' => $telegramId,
+        $callback = cm_salebot_request('send_callback_by_platform_id', [
+            'platform_ids' => [$telegramId],
+            'callback_text' => 'cm_group_consultation_requested',
             'group_id' => $groupId,
-            'message' => 'cm_group_consultation_requested',
-            'resume_bot' => true,
-            'cm_product' => (string)($payload['product'] ?? $state['recommendedProduct'] ?? ''),
-            'cm_source' => (string)($payload['source'] ?? 'application'),
         ]);
-        return $callback !== null;
+        return cm_salebot_response_success($callback);
     }
 
     return true;
