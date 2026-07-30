@@ -1,0 +1,32 @@
+name: Temporary REG.RU package build
+
+on:
+  pull_request:
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build deployment archive
+        run: |
+          mkdir -p dist/cm-group
+          rsync -a ./ dist/cm-group/ \
+            --exclude '.git/' \
+            --exclude '.github/' \
+            --exclude 'dist/' \
+            --exclude 'AUDIT.md' \
+            --exclude 'README.md' \
+            --exclude 'data/profiles/' \
+            --exclude 'data/events/' \
+            --exclude 'api/storage/' \
+            --exclude 'api/config.local.php'
+          cp api/config.example.php dist/cm-group/api/config.local.example.php
+          cd dist
+          zip -r CM_Group_REG_RU_latest.zip cm-group
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CM_Group_REG_RU_latest
+          path: dist/CM_Group_REG_RU_latest.zip
+          if-no-files-found: error
+          retention-days: 7
