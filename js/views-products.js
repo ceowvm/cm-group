@@ -30,15 +30,29 @@ async function performProtectedAction(action,payload={}){
     void emitEvent('lesson_opened',{lesson_url:payload.url||''});
     if(payload.isLink)openExternal(payload.url);else setScreen('materials');
   }else if(action==='product-consultation'){
-    const delivered=await emitEvent('product_consultation_requested',{
-      product:payload.product||state.recommendedProduct||state.selectedProduct||'general',
-      source:payload.source||'application'
-    });
+    let delivered=false;
+    try{
+      const result=await apiRequest('event.php',{
+        method:'POST',
+        body:{
+          event:'product_consultation_requested',
+          payload:{
+            product:payload.product||state.recommendedProduct||state.selectedProduct||'general',
+            source:payload.source||'application'
+          },
+          client_version:APP_VERSION
+        }
+      });
+      delivered=Boolean(result&&result.salebot_forwarded);
+    }catch(error){
+      console.error('Consultation delivery failed',error);
+      setSyncMode('error');
+    }
     if(delivered){
       haptic('notificationOccurred');
       toast('Заявка отправлена. Менеджер свяжется с вами в ближайшее время.','success');
     }else{
-      toast('Не удалось отправить заявку. Откройте приложение из Telegram и попробуйте ещё раз.','warning');
+      toast('Заявка сохранена, но не передана менеджеру. Попробуйте ещё раз позже.','warning');
     }
   }else if(action==='full-access'){
     await emitEvent('full_access_opened');
