@@ -28,10 +28,13 @@ function bind(){
       state.profile=null;
       state.recommendedProduct=null;
       setScreen('quiz');
-    }else if(action==='prev'&&state.step>0){
-      state.step--;
+    }else if(action==='prev'){
+      if(state.step<=0)return;
+      state.step=Math.max(0,state.step-1);
       touch();
+      haptic();
       render();
+      window.scrollTo({top:0,behavior:'auto'});
     }else if(action==='next'){
       if(!state.answers[questions[state.step].key])return toast('Выберите вариант','warning');
       if(state.step<questions.length-1){state.step++;touch();render()}
