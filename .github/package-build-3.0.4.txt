@@ -1,0 +1,1 @@
+Temporary file to trigger REG.RU package build for version 3.0.4. Do not merge into main.
