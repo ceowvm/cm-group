@@ -1,8 +1,8 @@
 /* Production readiness v3 */
 .brand-button{border:0;background:transparent;color:inherit;padding:0;text-align:left;font:inherit}
-.brand-button>span:last-child{display:block}
+.brand-button>span:last-child{display:block;min-width:0}
 .brand-title,.brand-subtitle{display:block}
-.topbar-actions{display:flex;align-items:center;gap:10px}
+.topbar-actions{display:flex;align-items:center;gap:10px;flex:0 0 auto}
 .sync-status{display:inline-flex;align-items:center;gap:6px;max-width:152px;font-size:9px;line-height:1.25;text-align:right;color:var(--muted)}
 .sync-status:before{content:"";width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:#716c8c}
 .sync-status--connecting:before,.sync-status--syncing:before{background:var(--teal);animation:statusPulse 1.15s ease-in-out infinite}
@@ -20,7 +20,7 @@
 .toast[data-type="success"]{color:var(--teal);border-color:rgba(49,204,173,.3)}
 .noscript{position:fixed;inset:0;display:grid;place-items:center;padding:24px;background:var(--bg);color:var(--text);text-align:center;z-index:100}
 .field input:invalid{box-shadow:none}
-.topbar{position:relative}
+.topbar{position:relative;min-width:0}
 .popup-menu{position:absolute;right:0;top:52px;width:min(300px,calc(100vw - 36px));padding:10px;border:1px solid var(--line);border-radius:18px;background:rgba(15,10,45,.98);box-shadow:0 24px 70px rgba(0,0,0,.48);backdrop-filter:blur(20px);z-index:45}
 .popup-menu button{width:100%;display:flex;align-items:center;gap:11px;border:0;border-radius:12px;padding:12px 13px;background:transparent;color:var(--text);text-align:left;font-size:12px;font-weight:650}
 .popup-menu button:hover,.popup-menu button:focus-visible{background:rgba(101,68,216,.15);outline:none}
@@ -31,4 +31,32 @@
 .icon-btn[aria-expanded="true"]{border-color:rgba(49,204,173,.42);color:var(--teal);background:rgba(49,204,173,.08)}
 .radio{border-color:var(--teal);box-shadow:0 0 0 3px rgba(49,204,173,.05)}
 .option.selected .radio:after{background:var(--teal);box-shadow:0 0 12px rgba(49,204,173,.45)}
-@media(max-width:390px){.sync-status{max-width:105px;font-size:8px}.topbar{align-items:flex-start}.topbar-actions{padding-top:5px}.popup-menu{top:49px}}
+
+/* Telegram WebView stability */
+html,body{width:100%;max-width:100%;overflow-x:hidden}
+.app-shell{width:100%;max-width:540px;min-width:0}
+.app,.screen,.stack,.grid,.card,.hero,.benefit,.brand{min-width:0;max-width:100%}
+h1,h2,h3,p,strong,span{overflow-wrap:anywhere;word-break:normal}
+.hero h1{max-width:100%}
+.welcome-benefits .benefit{align-items:flex-start}
+.welcome-benefits .benefit strong{min-width:0;line-height:1.35}
+
+@media(max-width:520px){
+  .app-shell{padding-left:16px;padding-right:16px}
+  .topbar{margin-bottom:22px}
+  h1{font-size:clamp(28px,9vw,40px);line-height:1.06}
+  .welcome-benefits{grid-template-columns:1fr!important}
+  .welcome-benefits .benefit-wide{grid-column:auto!important}
+  .welcome-materials-title{padding:18px}
+  .card{padding:18px}
+}
+@media(max-width:390px){
+  .sync-status{max-width:105px;font-size:8px}
+  .topbar{align-items:flex-start}
+  .topbar-actions{padding-top:5px}
+  .popup-menu{top:49px}
+  .brand-title{font-size:15px}
+  .brand-subtitle{font-size:9px}
+  .logo-mark{width:44px;height:44px}
+  h1{font-size:28px}
+}
