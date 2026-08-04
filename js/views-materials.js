@@ -15,7 +15,7 @@ function materials(){return `<section class="screen stack"><div class="card"><sp
 
 function course(){
   if(!state.phoneSubmitted){state.pendingAction='open-course';touch();return phone()}
-  return `<section class="screen stack"><button class="back-link" type="button" data-nav="materials">← К материалам</button><div class="card course-intro"><span class="profile-badge">Базовый курс</span><h2 class="mt-16">Базовый курс по трейдингу</h2><p class="muted">Пять последовательных уроков из действующего сценария бота CM Group.</p></div>${BASIC_COURSE.map((lesson,index)=>`<div class="card course-lesson"><div class="lesson-number">${index+1}</div><h3>${lesson.title}</h3><div class="video-frame mt-16"><video controls playsinline preload="none" src="${esc(lesson.url)}"></video></div><button class="btn btn-secondary mt-12" type="button" data-action="open-link" data-url="${esc(lesson.url)}">Открыть видео отдельно</button></div>`).join('')}</section>`;
+  return `<section class="screen stack"><button class="back-link" type="button" data-nav="materials">← К материалам</button><div class="card course-intro"><span class="profile-badge">Базовый курс</span><h2 class="mt-16">Базовый курс по трейдингу</h2><p class="muted">Пять последовательных уроков из действующего сценария бота CM Group.</p></div>${BASIC_COURSE.map((lesson,index)=>`<div class="card course-lesson"><div class="lesson-number">${index+1}</div><h3>${lesson.title}</h3><div class="video-frame mt-16"><video controls playsinline preload="metadata" src="${esc(lesson.url)}"></video></div></div>`).join('')}</section>`;
 }
 
 function products(){
