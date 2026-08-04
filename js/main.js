@@ -105,7 +105,6 @@ function bind(){
     }else if(action==='open-link'){
       openExternal(element.dataset.url);
     }else if(action==='privacy-policy'){
-      void emitEvent('privacy_policy_opened');
       openExternal(POLICY_URL);
     }else if(action==='reset'&&DEBUG_MODE){
       const confirmed=window.confirm('Удалить тестовый профиль и начать заново?');
