@@ -27,7 +27,6 @@ async function performProtectedAction(action,payload={}){
     await emitEvent('basic_course_opened');
     setScreen('course');
   }else if(action==='open-lesson'){
-    void emitEvent('lesson_opened',{lesson_url:payload.url||''});
     if(payload.isLink)openExternal(payload.url);else setScreen('materials');
   }else if(action==='product-consultation'){
     let delivered=false;
@@ -55,7 +54,6 @@ async function performProtectedAction(action,payload={}){
       toast('Заявка сохранена, но не передана менеджеру. Попробуйте ещё раз позже.','warning');
     }
   }else if(action==='full-access'){
-    await emitEvent('full_access_opened');
     setScreen('materials');
   }
 }
