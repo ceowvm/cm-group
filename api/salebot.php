@@ -117,9 +117,24 @@ function cm_salebot_request(string $method, array $payload, array &$trace = []):
 function cm_salebot_extract_client_id(?array $response, string $telegramId): ?string
 {
     if (!$response) return null;
+
     foreach (['client_id', 'id'] as $key) {
-        if (isset($response[$key]) && preg_match('/^\d+$/', (string)$response[$key])) return (string)$response[$key];
+        if (isset($response[$key]) && preg_match('/^\d+$/', (string)$response[$key])) {
+            return (string)$response[$key];
+        }
     }
+
+    if (array_is_list($response)) {
+        foreach ($response as $item) {
+            if (!is_array($item)) continue;
+            $platformId = (string)($item['platform_id'] ?? $item['user_id'] ?? '');
+            $clientId = (string)($item['client_id'] ?? $item['id'] ?? '');
+            if ($clientId !== '' && ($platformId === '' || $platformId === $telegramId)) {
+                return $clientId;
+            }
+        }
+    }
+
     foreach (['clients', 'items', 'data', 'result'] as $key) {
         if (!isset($response[$key]) || !is_array($response[$key])) continue;
         foreach ($response[$key] as $item) {
@@ -129,15 +144,37 @@ function cm_salebot_extract_client_id(?array $response, string $telegramId): ?st
             if ($clientId !== '' && ($platformId === '' || $platformId === $telegramId)) return $clientId;
         }
     }
-    if (isset($response[$telegramId]) && preg_match('/^\d+$/', (string)$response[$telegramId])) return (string)$response[$telegramId];
+
+    if (isset($response[$telegramId]) && preg_match('/^\d+$/', (string)$response[$telegramId])) {
+        return (string)$response[$telegramId];
+    }
     return null;
+}
+
+function cm_salebot_notification_text(string $eventName, array $profile, array $state, array $payload): ?string
+{
+    $name = trim((string)($profile['name'] ?? ''));
+    $phone = trim((string)($profile['phone'] ?? ''));
+    $product = trim((string)($payload['product'] ?? $state['recommendedProduct'] ?? ''));
+
+    return match ($eventName) {
+        'name_saved' => 'Пользователь указал имя в приложении' . ($name !== '' ? ': ' . $name : ''),
+        'lead_completed' => 'Получены контактные данные пользователя' . ($name !== '' ? ': ' . $name : '') . ($phone !== '' ? ', телефон ' . $phone : ''),
+        'calculator_completed' => 'Пользователь рассчитал доход в приложении',
+        'book_opened' => 'Пользователь получил книгу «Дневник Успешного Трейдера»',
+        'basic_course_opened' => 'Пользователь открыл обучающий курс',
+        'return_to_bot' => 'Пользователь вернулся в Telegram-бот',
+        'product_consultation_requested' => 'Новая заявка на консультацию' . ($name !== '' ? '. Имя: ' . $name : '') . ($phone !== '' ? '. Телефон: ' . $phone : '') . ($product !== '' ? '. Продукт: ' . $product : '') . '. Источник: приложение CM Group',
+        default => null,
+    };
 }
 
 function cm_salebot_forward(array $event): bool
 {
+    $eventName = (string)($event['event'] ?? '');
     $debug = [
         'configured' => cm_salebot_configured(),
-        'event' => (string)($event['event'] ?? ''),
+        'event' => $eventName,
     ];
     if (!cm_salebot_configured()) {
         $debug['error'] = 'SaleBot is not configured';
@@ -152,10 +189,12 @@ function cm_salebot_forward(array $event): bool
     $payload = is_array($event['payload'] ?? null) ? $event['payload'] : [];
     $telegramId = preg_replace('/\D/', '', (string)($user['id'] ?? ''));
     $groupId = trim((string)($config['salebot_group_id'] ?? ''));
+    $notificationText = cm_salebot_notification_text($eventName, $profile, $state, $payload);
     $debug['telegram_id'] = $telegramId;
     $debug['group_id'] = $groupId;
     $debug['profile_name_present'] = trim((string)($profile['name'] ?? '')) !== '';
     $debug['profile_phone_present'] = trim((string)($profile['phone'] ?? '')) !== '';
+    $debug['notification_text'] = $notificationText;
 
     if ($telegramId === '' || $groupId === '') {
         $debug['error'] = 'Telegram ID or group ID is empty';
@@ -191,8 +230,11 @@ function cm_salebot_forward(array $event): bool
         'cm_main_barrier' => (string)($answers['main_barrier'] ?? ''),
         'cm_goal' => (string)($answers['goal'] ?? ''),
         'cm_recommended_product' => (string)($state['recommendedProduct'] ?? ''),
-        'cm_last_event' => (string)($event['event'] ?? ''),
+        'cm_last_event' => $eventName,
         'cm_event_source' => (string)($payload['source'] ?? $event['source'] ?? 'cm_group_miniapp'),
+        'cm_notification_text' => (string)($notificationText ?? ''),
+        'cm_notification_priority' => $eventName === 'product_consultation_requested' ? '2' : '0',
+        'cm_bell_required' => $eventName === 'product_consultation_requested' ? '1' : '0',
         'cm_updated_at' => (string)($event['created_at'] ?? gmdate(DATE_ATOM)),
     ];
     $debug['variable_keys'] = array_keys($variables);
@@ -209,20 +251,20 @@ function cm_salebot_forward(array $event): bool
         return false;
     }
 
-    if (($event['event'] ?? '') === 'product_consultation_requested') {
-        $callbackTrace = [];
-        $callback = cm_salebot_request('send_callback_by_platform_id', [
-            'platform_ids' => [$telegramId],
-            'callback_text' => 'cm_group_consultation_requested',
-            'group_id' => $groupId,
-        ], $callbackTrace);
-        $debug['callback'] = $callbackTrace;
-        $debug['success'] = cm_salebot_response_success($callback);
+    if ($notificationText === null) {
+        $debug['success'] = true;
         cm_salebot_debug_write($debug);
-        return $debug['success'];
+        return true;
     }
 
-    $debug['success'] = true;
+    $callbackTrace = [];
+    $callback = cm_salebot_request('send_callback_by_platform_id', [
+        'platform_ids' => [$telegramId],
+        'callback_text' => $notificationText,
+        'group_id' => $groupId,
+    ], $callbackTrace);
+    $debug['callback'] = $callbackTrace;
+    $debug['success'] = cm_salebot_response_success($callback);
     cm_salebot_debug_write($debug);
-    return true;
+    return $debug['success'];
 }
